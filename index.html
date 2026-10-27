@@ -1,486 +1,774 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Painel de Controle — Unidade 03</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CALDEIRA // CONTROLE INDUSTRIAL</title>
+
 <style>
-  :root{
-    --bg:#101214; --panel:#25292b; --panel2:#1a1d1f; --edge:#454b4e;
-    --text:#d8d8cf; --muted:#858b8d; --amber:#e2a43b; --red:#e33e35;
-    --green:#5fce83; --shadow:#080909;
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0; min-height:100vh; padding:22px 14px;
-    display:flex; align-items:center; justify-content:center;
-    color:var(--text); background:
-      radial-gradient(ellipse at 50% 0%, #303538 0%, #171a1c 48%, #0b0c0d 100%);
-    font-family: "Courier New", monospace;
-  }
-  .panel{
-    width:min(980px,100%); position:relative; padding:clamp(16px,3vw,30px);
-    background:linear-gradient(145deg,#34393b,#202426 45%,#292e30);
-    border:2px solid #555c5f; border-radius:7px;
-    box-shadow:0 20px 55px #000b,inset 0 1px #7775,inset 0 -3px #0008;
-  }
-  .panel:before{
-    content:"";position:absolute;inset:7px;border:1px solid #7774;pointer-events:none;border-radius:3px
-  }
-  .screw{position:absolute;width:11px;height:11px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#92999b,#383d3f 55%,#111);border:1px solid #111;box-shadow:0 1px 2px #000}
-  .s1{top:13px;left:13px}.s2{top:13px;right:13px}.s3{bottom:13px;left:13px}.s4{bottom:13px;right:13px}
-  header{display:flex;justify-content:space-between;gap:15px;align-items:flex-start;border-bottom:2px solid #111;padding:3px 4px 17px;margin-bottom:18px}
-  .eyebrow{font-size:11px;letter-spacing:3px;color:#b2b6b4}
-  h1{font-size:clamp(20px,4vw,31px);letter-spacing:2px;margin:7px 0 4px;color:#f0eee4}
-  .subtitle{font-size:11px;color:#92999a;letter-spacing:1px}
-  .status-box{min-width:142px;background:#101314;border:1px solid #51585a;padding:10px 12px;text-align:center;box-shadow:inset 0 0 12px #0008}
-  .status-label{font-size:10px;letter-spacing:2px;color:#8e9698;margin-bottom:7px}
-  .status-value{font-size:12px;letter-spacing:1px;color:var(--red);font-weight:bold}
-  .status-value.ready{color:var(--green)}
-  .section-title{display:flex;align-items:center;gap:10px;margin:22px 0 12px;font-size:12px;letter-spacing:2px;color:#e1e0d5}
-  .section-title:after{content:"";height:1px;background:#62686a;flex:1}
-  .controls-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-  .module{background:linear-gradient(180deg,#1b1f21,#111415);border:1px solid #555c5e;padding:15px 12px 13px;min-width:0;box-shadow:inset 0 1px #ffffff08,0 3px 4px #0005}
-  .module-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #414648;padding-bottom:9px;margin-bottom:14px}
-  .module-name{font-size:12px;letter-spacing:2px;font-weight:bold}
-  .module-id{font-size:11px;color:#9da3a3;border:1px solid #555;padding:3px 6px}
-  .switch-area{display:flex;align-items:center;justify-content:center;gap:18px;min-height:120px}
-  .switch-labels{display:flex;flex-direction:column;justify-content:space-between;height:76px;font-size:9px;color:#777f80;text-align:right}
-  .switch{appearance:none;width:34px;height:80px;background:linear-gradient(90deg,#090b0c,#3a4042,#111);border:2px solid #080909;border-radius:4px;position:relative;cursor:pointer;box-shadow:inset 0 0 0 1px #747a7b55}
-  .switch:before{content:"";position:absolute;left:3px;right:3px;height:31px;top:4px;border-radius:3px;background:linear-gradient(90deg,#6c7375,#c2c5c0 45%,#737a7c);border:1px solid #090a0a;box-shadow:0 2px 4px #000b;transition:top .15s}
-  .switch:checked:before{top:41px}
-  .switch-caption{text-align:center;color:#aeb3af;font-size:10px;margin-top:9px;letter-spacing:1px}
-  .dial-wrap{display:flex;justify-content:center;align-items:center;min-height:135px}
-  .dial{
-    --angle:0deg; width:112px;height:112px;border-radius:50%;position:relative;
-    background:radial-gradient(circle,#343a3c 0 48%,#151819 49% 56%,#666d6e 57% 60%,#222729 61% 72%,#707779 73% 76%,#171a1b 77%);
-    border:2px solid #080909;box-shadow:inset 0 0 0 2px #a3a7a333,0 4px 7px #0009;cursor:pointer;touch-action:manipulation;
-  }
-  .dial:focus-visible{outline:2px solid var(--amber);outline-offset:4px}
-  .tick-ring{position:absolute;inset:4px;border-radius:50%;pointer-events:none}
-  .tick{position:absolute;width:2px;height:7px;background:#b6b8af;left:50%;top:1px;transform-origin:1px 51px}
-  .tick.major{height:10px;width:3px;background:#f0e9d4}
-  .pointer{position:absolute;left:50%;top:15px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:20px solid #e2a43b;transform:translateX(-50%) rotate(var(--angle));transform-origin:50% 41px;filter:drop-shadow(0 1px 2px #000);pointer-events:none}
-  .dial-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:37px;height:37px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#777f81,#24292b 55%,#0a0c0d);border:2px solid #090a0a;box-shadow:0 1px 2px #000}
-  .dial-number{font-size:12px;text-align:center;color:#d7d5c9;margin-top:7px;letter-spacing:1px}
-  .dial-help{font-size:9px;text-align:center;color:#777f80;margin-top:4px}
-  .led-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:20px}
-  .led-module{display:flex;align-items:center;gap:12px;padding:12px;background:#141718;border:1px solid #4a5052}
-  .led{width:19px;height:19px;border-radius:50%;flex:0 0 auto;background:#a92320;border:2px solid #5a1a18;box-shadow:inset 0 2px 3px #ffffff35,0 0 5px #c22a2633}
-  .led.yellow{background:#e3a72d;border-color:#8d641d;box-shadow:0 0 10px #e3a72d66}
-  .led.green{background:#50d17a;border-color:#237b41;box-shadow:0 0 11px #50d17a77}
-  .led.off{background:#25292a;border-color:#111;box-shadow:inset 0 2px 4px #000}
-  .led-text strong{display:block;font-size:10px;letter-spacing:1px;margin-bottom:4px}
-  .led-text span{font-size:9px;color:#8b9292}
-  .lever-area{display:flex;align-items:center;justify-content:center;gap:20px;padding:18px;background:#141718;border:1px solid #4a5052}
-  .lever-guard{width:90px;height:88px;border:2px solid #5d6465;border-radius:5px;background:linear-gradient(135deg,#282d2f,#101213);position:relative;box-shadow:inset 0 0 0 4px #080909;display:flex;justify-content:center;align-items:center}
-  .lever-base{position:absolute;bottom:12px;width:34px;height:19px;background:linear-gradient(#858b8b,#33393b);border:2px solid #090a0a;border-radius:3px}
-  .lever-handle{position:absolute;width:10px;height:48px;left:39px;top:13px;border-radius:5px;background:linear-gradient(90deg,#6b7173,#d0d0c7,#5c6264);border:1px solid #090a0a;transform:rotate(-28deg);transform-origin:50% 85%;transition:transform .5s;box-shadow:2px 2px 4px #000}
-  .lever-handle:after{content:"";position:absolute;top:-9px;left:-7px;width:22px;height:17px;border-radius:5px;background:linear-gradient(180deg,#a8322e,#651c1a);border:2px solid #111}
-  .lever-button{background:linear-gradient(#8c2825,#4b1514);color:#f4e5dc;border:1px solid #a94b45;padding:12px 17px;font: bold 11px "Courier New",monospace;letter-spacing:1px;cursor:pointer;box-shadow:0 3px 0 #190909}
-  .lever-button:disabled{opacity:.35;cursor:not-allowed;filter:grayscale(1)}
-  .lever-button:not(:disabled):active{transform:translateY(2px);box-shadow:0 1px 0 #190909}
-  .lever-copy{max-width:310px;font-size:10px;line-height:1.7;color:#a4aaaa}
-  .message{margin-top:15px;min-height:42px;background:#0c0e0f;border:1px solid #3d4446;padding:13px 14px;font-size:11px;letter-spacing:1px;color:#aeb5b3;line-height:1.5}
-  .message.warn{color:#e6b24d;border-color:#8b6828}
-  .message.danger{color:#ff5148;border-color:#b12b26}
-  .message.success{color:#6cdd91;border-color:#287847}
-  .footer{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:16px;font-size:9px;color:#777e80;letter-spacing:1px}
-  .reset{background:transparent;border:1px solid #555d5f;color:#9ba1a1;padding:7px 9px;font:10px "Courier New",monospace;cursor:pointer}
-  .alarm{animation:alarmflash .55s steps(2,end) infinite}
-  .alarm .led{animation:ledflash .55s steps(2,end) infinite}
-  @keyframes alarmflash{0%,100%{border-color:#b62b25}50%{border-color:#ff5046;box-shadow:0 0 18px #c52b2580}}
-  @keyframes ledflash{0%,100%{background:#e52e28;box-shadow:0 0 13px #f33}50%{background:#4a1010;box-shadow:none}}
-  @media(max-width:650px){
-    body{padding:10px 7px;align-items:flex-start}
-    .panel{padding:17px 12px}
-    header{flex-direction:column}
-    .status-box{width:100%}
-    .controls-grid{gap:6px}
-    .module{padding:11px 5px}
-    .module-name{font-size:10px;letter-spacing:1px}
-    .module-id{font-size:9px;padding:2px 4px}
-    .switch-area{gap:7px;min-height:110px}
-    .switch-labels{font-size:8px}
-    .dial{width:88px;height:88px}
-    .tick{transform-origin:1px 39px}
-    .pointer{top:11px;transform:translateX(-50%) rotate(var(--angle));transform-origin:50% 34px}
-    .dial-wrap{min-height:110px}
-    .led-row{gap:5px}
-    .led-module{padding:9px 5px;gap:6px;flex-direction:column;text-align:center}
-    .led-text strong{font-size:9px}
-    .led-text span{font-size:8px}
-    .lever-area{gap:12px;padding:12px}
-    .lever-copy{font-size:9px}
-    .footer{align-items:flex-start;flex-direction:column}
-  }
+:root {
+  --bg: #090909;
+  --panel: #171717;
+  --metal: #303030;
+  --red: #e32626;
+  --green: #39d98a;
+  --text: #dedede;
+  --muted: #777;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    repeating-linear-gradient(
+      0deg, transparent 0px, transparent 3px, #ffffff04 4px
+    ),
+    radial-gradient(ellipse at top, #292929, #090909 70%);
+  color: var(--text);
+  font-family: monospace;
+  padding: 20px;
+}
+
+main {
+  max-width: 850px;
+  margin: auto;
+}
+
+header {
+  text-align: center;
+  border: 1px solid #454545;
+  background: #111;
+  padding: 20px;
+  margin-bottom: 18px;
+  box-shadow: 0 0 25px #000;
+}
+
+h1 {
+  color: var(--red);
+  letter-spacing: 4px;
+  font-size: clamp(22px, 5vw, 35px);
+  margin: 0 0 10px;
+}
+
+.subtitle {
+  color: #888;
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+
+.panel {
+  border: 2px solid #454545;
+  background: linear-gradient(145deg, #222, #101010);
+  padding: 20px;
+  margin-bottom: 18px;
+  box-shadow: 0 8px 20px #0008;
+}
+
+.section-title {
+  color: #aaa;
+  border-bottom: 1px solid #444;
+  padding-bottom: 10px;
+  letter-spacing: 3px;
+  font-size: 14px;
+  margin: 0 0 20px;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+}
+
+.led {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background: #444;
+  border-radius: 50%;
+  box-shadow: inset 0 0 4px #000;
+}
+
+.led.green {
+  background: var(--green);
+  box-shadow: 0 0 12px var(--green);
+}
+
+.led.red {
+  background: var(--red);
+  box-shadow: 0 0 12px var(--red);
+}
+
+#message {
+  margin-top: 18px;
+  padding: 13px;
+  border: 1px solid #383838;
+  background: #080808;
+  color: #aaa;
+  font-size: 12px;
+  line-height: 1.6;
+  min-height: 45px;
+}
+
+#message.success {
+  color: var(--green);
+  border-color: #28744d;
+}
+
+#message.danger {
+  color: #ff4545;
+  border-color: #9e1717;
+  animation: blink 0.8s infinite alternate;
+}
+
+@keyframes blink {
+  from { background: #100808; }
+  to { background: #4a0808; }
+}
+
+.valves {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.valve {
+  text-align: center;
+  padding: 12px 4px;
+  border: 1px solid #3b3b3b;
+  background: #101010;
+}
+
+.valve h3 {
+  font-size: 12px;
+  color: #aaa;
+  letter-spacing: 2px;
+}
+
+.valve-knob {
+  width: clamp(68px, 20vw, 105px);
+  height: clamp(68px, 20vw, 105px);
+  border-radius: 50%;
+  border: 7px solid #505050;
+  background: radial-gradient(circle, #777, #292929 65%, #111);
+  color: #ff4a4a;
+  font-family: monospace;
+  font-size: 25px;
+  font-weight: bold;
+  cursor: pointer;
+  position: relative;
+  box-shadow: inset 0 0 12px #000, 0 4px 8px #000;
+}
+
+.valve-knob::before {
+  content: "";
+  position: absolute;
+  width: 5px;
+  height: 25%;
+  background: #e3e3e3;
+  top: 8%;
+  left: calc(50% - 2.5px);
+  border-radius: 3px;
+}
+
+.valve-knob span {
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 0 8px #000;
+}
+
+.valve-knob:active { filter: brightness(1.5); }
+
+.valve small {
+  display: block;
+  margin-top: 12px;
+  color: #666;
+  font-size: 10px;
+}
+
+.switches {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.switch {
+  text-align: center;
+  border: 1px solid #383838;
+  padding: 15px 5px;
+  background: #111;
+}
+
+.switch h3 {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.switch-button {
+  width: 48px;
+  height: 75px;
+  border: 2px solid #555;
+  border-radius: 5px;
+  background: #080808;
+  padding: 5px;
+  cursor: pointer;
+  position: relative;
+}
+
+.switch-button::before {
+  content: "";
+  position: absolute;
+  width: 22px;
+  height: 28px;
+  left: 11px;
+  top: 6px;
+  background: linear-gradient(90deg, #555, #aaa, #444);
+  border-radius: 3px;
+  transition: top 0.15s;
+}
+
+.switch-button.on::before {
+  top: 35px;
+  background: linear-gradient(90deg, #207b4b, #6affaa, #207b4b);
+}
+
+.switch-state {
+  display: block;
+  margin-top: 10px;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.switch-state.on { color: var(--green); }
+.switch-state.off { color: var(--red); }
+
+.controls {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+button.action {
+  border: 1px solid #777;
+  background: #222;
+  color: #ddd;
+  padding: 13px 18px;
+  font-family: monospace;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+button.action:hover { background: #383838; }
+button.danger-button {
+  border-color: #b32121;
+  color: #ff5555;
+}
+
+button:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 3px;
+}
+
+.lever-box { text-align: center; }
+
+.lever {
+  width: 90px;
+  height: 130px;
+  position: relative;
+  border: 3px solid #555;
+  background: #101010;
+  cursor: pointer;
+  margin: 10px auto;
+  display: block;
+}
+
+.lever::before {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 75px;
+  left: 36px;
+  top: 10px;
+  background: linear-gradient(90deg, #555, #ddd, #555);
+  transform-origin: bottom center;
+  transform: rotate(0deg);
+  transition: transform 0.35s;
+}
+
+.lever::after {
+  content: "";
+  position: absolute;
+  width: 38px;
+  height: 24px;
+  left: 23px;
+  top: 3px;
+  border-radius: 6px;
+  background: #9e2424;
+  box-shadow: inset 0 0 5px #000;
+  transition: transform 0.35s;
+}
+
+.lever.active::before { transform: rotate(35deg); }
+.lever.active::after { transform: translate(16px, 18px); }
+
+.warning {
+  color: #777;
+  font-size: 11px;
+  line-height: 1.7;
+  text-align: center;
+}
+
+footer {
+  text-align: center;
+  color: #555;
+  font-size: 10px;
+  letter-spacing: 2px;
+  padding: 15px;
+}
+
+@media (max-width: 400px) {
+  body { padding: 10px; }
+  .panel { padding: 12px; }
+  .valves, .switches { gap: 6px; }
+  .valve { padding: 8px 2px; }
+}
 </style>
 </head>
+
 <body>
-<main class="panel" id="panel">
-  <i class="screw s1"></i><i class="screw s2"></i><i class="screw s3"></i><i class="screw s4"></i>
+<main>
   <header>
-    <div>
-      <div class="eyebrow">INSTALAÇÃO INDUSTRIAL // SETOR 03</div>
-      <h1>PAINEL DE CONTROLE</h1>
-      <div class="subtitle">UNIDADE DE CALDEIRAS · CONSOLE MANUAL</div>
-    </div>
-    <div class="status-box">
-      <div class="status-label">ESTADO DO SISTEMA</div>
-      <div class="status-value" id="systemStatus">DESLIGADO</div>
-    </div>
+    <h1>CALDEIRA</h1>
+    <div class="subtitle">INDUSTRIAL CONTROL SYSTEM // 05-14</div>
   </header>
 
-  <div class="section-title">01 / CIRCUITOS — INTERRUPTORES</div>
-  <section class="controls-grid" aria-label="Interruptores">
-    <div class="module">
-      <div class="module-head"><span class="module-name">CIRCUITO A</span><span class="module-id">A-01</span></div>
-      <div class="switch-area"><div class="switch-labels"><span>ON</span><span>OFF</span></div><input class="switch" type="checkbox" id="swA" aria-label="Interruptor do circuito A"></div>
-      <div class="switch-caption" id="swCaptionA">DESLIGADO</div>
+  <section class="panel">
+    <div class="status-row">
+      <div class="status">
+        <span class="led" id="systemLed"></span>
+        <span id="systemStatus">SISTEMA DESLIGADO</span>
+      </div>
+      <div class="status">
+        <span class="led" id="alarmLed"></span>
+        <span id="alarmStatus">ALERTA INATIVO</span>
+      </div>
     </div>
-    <div class="module">
-      <div class="module-head"><span class="module-name">CIRCUITO B</span><span class="module-id">B-02</span></div>
-      <div class="switch-area"><div class="switch-labels"><span>ON</span><span>OFF</span></div><input class="switch" type="checkbox" id="swB" aria-label="Interruptor do circuito B"></div>
-      <div class="switch-caption" id="swCaptionB">DESLIGADO</div>
-    </div>
-    <div class="module">
-      <div class="module-head"><span class="module-name">CIRCUITO C</span><span class="module-id">C-03</span></div>
-      <div class="switch-area"><div class="switch-labels"><span>ON</span><span>OFF</span></div><input class="switch" type="checkbox" id="swC" aria-label="Interruptor do circuito C"></div>
-      <div class="switch-caption" id="swCaptionC">DESLIGADO</div>
+
+    <div id="message" aria-live="polite">
+      AGUARDANDO CONFIGURAÇÃO. AJUSTE AS VÁLVULAS E OS INTERRUPTORES.
     </div>
   </section>
 
-  <div class="section-title">02 / ALINHAMENTO — VÁLVULAS</div>
-  <section class="controls-grid" aria-label="Válvulas giratórias">
-    <div class="module">
-      <div class="module-head"><span class="module-name">VÁLVULA A</span><span class="module-id">V-01</span></div>
-      <div class="dial-wrap"><button class="dial" id="dialA" aria-label="Girar válvula A" title="Clique para girar"><span class="tick-ring"></span><span class="pointer"></span><span class="dial-center"></span></button></div>
-      <div class="dial-number">POSIÇÃO <span id="posA">1</span> / 10</div><div class="dial-help">PRESSIONE PARA GIRAR ↻</div>
+<!-- CONTROLES DAS VÁLVULAS -->
+<section class="panel">
+  <h2 class="section-title">01 // CONTROLE DE PRESSÃO</h2>
+
+  <div class="valves">
+    <div class="valve">
+      <h3>VÁLVULA A</h3>
+      <button class="valve-knob" id="valveA">
+        <span id="valueA">1</span>
+      </button>
+      <small>PRESSÃO A</small>
     </div>
-    <div class="module">
-      <div class="module-head"><span class="module-name">VÁLVULA B</span><span class="module-id">V-02</span></div>
-      <div class="dial-wrap"><button class="dial" id="dialB" aria-label="Girar válvula B" title="Clique para girar"><span class="tick-ring"></span><span class="pointer"></span><span class="dial-center"></span></button></div>
-      <div class="dial-number">POSIÇÃO <span id="posB">1</span> / 10</div><div class="dial-help">PRESSIONE PARA GIRAR ↻</div>
+
+    <div class="valve">
+      <h3>VÁLVULA B</h3>
+      <button class="valve-knob" id="valveB">
+        <span id="valueB">1</span>
+      </button>
+      <small>PRESSÃO B</small>
     </div>
-    <div class="module">
-      <div class="module-head"><span class="module-name">VÁLVULA C</span><span class="module-id">V-03</span></div>
-      <div class="dial-wrap"><button class="dial" id="dialC" aria-label="Girar válvula C" title="Clique para girar"><span class="tick-ring"></span><span class="pointer"></span><span class="dial-center"></span></button></div>
-      <div class="dial-number">POSIÇÃO <span id="posC">1</span> / 10</div><div class="dial-help">PRESSIONE PARA GIRAR ↻</div>
+
+    <div class="valve">
+      <h3>VÁLVULA C</h3>
+      <button class="valve-knob" id="valveC">
+        <span id="valueC">1</span>
+      </button>
+      <small>PRESSÃO C</small>
     </div>
-  </section>
+  </div>
 
-  <div class="section-title">03 / INDICADORES DE ESTÁGIO</div>
-  <section class="led-row" aria-label="Indicadores">
-    <div class="led-module"><span class="led" id="led1"></span><div class="led-text"><strong>ESTÁGIO 01</strong><span>CIRCUITOS</span></div></div>
-    <div class="led-module"><span class="led" id="led2"></span><div class="led-text"><strong>ESTÁGIO 02</strong><span>VÁLVULAS</span></div></div>
-    <div class="led-module"><span class="led off" id="led3"></span><div class="led-text"><strong>ESTÁGIO 03</strong><span>ATIVAÇÃO</span></div></div>
-  </section>
+  <p class="warning">
+    CLIQUE NAS VÁLVULAS PARA AVANÇAR AS POSIÇÕES DE 1 A 10.
+  </p>
+</section>
 
-  <div class="section-title">04 / ACIONAMENTO GERAL</div>
-  <section class="lever-area">
-    <div class="lever-guard" aria-hidden="true"><div class="lever-base"></div><div class="lever-handle" id="leverHandle"></div></div>
-    <button class="lever-button" id="leverButton" disabled>PUXAR ALAVANCA</button>
-    <div class="lever-copy" id="leverCopy">ACIONAMENTO BLOQUEADO.<br>Valide os circuitos e alinhe as três válvulas para liberar a alavanca.</div>
-  </section>
+<!-- INTERRUPTORES -->
+<section class="panel">
+  <h2 class="section-title">02 // INTERRUPTORES</h2>
 
-  <div class="message" id="message" role="status" aria-live="polite">SISTEMA DESLIGADO. Configure os circuitos para iniciar.</div>
-  <div class="footer"><span>CONSOLE LOCAL · UNIDADE 03</span><button class="reset" id="resetButton">REINICIAR PAINEL</button></div>
-</main> <script>
-(() => {
-  const STORAGE_KEY = "boilerPanelPuzzle_v1";
-  const switches = ["A","B","C"];
+  <div class="switches">
+    <div class="switch">
+      <h3>INTERRUPTOR A</h3>
+      <button class="switch-button" id="switchA"></button>
+      <span class="switch-state off" id="switchStateA">OFF</span>
+    </div>
 
-  // Combinação correta dos interruptores.
-  const targetSwitches = { A:true, B:false, C:true };
+    <div class="switch">
+      <h3>INTERRUPTOR B</h3>
+      <button class="switch-button on" id="switchB"></button>
+      <span class="switch-state on" id="switchStateB">ON</span>
+    </div>
 
-  // COMBINAÇÃO FIXA DAS VÁLVULAS: 3 - 1 - 2.
-  const FIXED_TARGETS = { A:3, B:1, C:2 };
+    <div class="switch">
+      <h3>INTERRUPTOR C</h3>
+      <button class="switch-button on" id="switchC"></button>
+      <span class="switch-state on" id="switchStateC">ON</span>
+    </div>
+  </div>
+</section>
 
-  const panel = document.getElementById("panel");
-  const message = document.getElementById("message");
-  const status = document.getElementById("systemStatus");
-  const leverButton = document.getElementById("leverButton");
-  const leverHandle = document.getElementById("leverHandle");
-  const leverCopy = document.getElementById("leverCopy");
-  const leds = [
-    document.getElementById("led1"),
-    document.getElementById("led2"),
-    document.getElementById("led3")
-  ];
+<!-- ALAVANCA E BOTÕES -->
+<section class="panel lever-box">
+  <h2 class="section-title">03 // ATIVAÇÃO DO SISTEMA</h2>
 
-  function saveState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  <p class="warning">
+    CONFIRME A CONFIGURAÇÃO ANTES DE ACIONAR A ALAVANCA.
+  </p>
+
+  <button class="lever" id="lever"></button>
+
+  <div class="controls">
+    <button class="action" id="activateButton">
+      ACIONAR SISTEMA
+    </button>
+
+    <button class="action danger-button" id="stopAlarmButton">
+      SILENCIAR SIRENE
+    </button>
+
+    <button class="action" id="resetButton">
+      REINICIAR PAINEL
+    </button>
+  </div>
+</section>
+
+<footer>ORDEM VETO // UNIDADE DE CONTROLE 514</footer>
+</main>
+
+<script>
+"use strict";
+
+const valves = { A: 1, B: 1, C: 1 };
+const switches = { A: false, B: true, C: true };
+
+const targetValves = { A: 5, B: 1, C: 4 };
+const targetSwitches = { A: false, B: true, C: true };
+
+let audioContext = null;
+let masterGain = null;
+let alarmTimer = null;
+let alarmActive = false;
+let systemStarted = false;
+
+const $ = id => document.getElementById(id);
+
+function setMessage(text, type = "") {
+  $("message").textContent = text;
+  $("message").className = type;
+}
+
+function updateStatus() {
+  $("systemLed").className =
+    "led" + (systemStarted ? " green" : "");
+
+  $("systemStatus").textContent =
+    systemStarted ? "SISTEMA ATIVADO" : "SISTEMA DESLIGADO";
+
+  $("alarmLed").className =
+    "led" + (alarmActive ? " red" : "");
+
+  $("alarmStatus").textContent =
+    alarmActive ? "ALERTA CRÍTICO" : "ALERTA INATIVO";
+}
+
+function updateValve(name) {
+  $("value" + name).textContent = valves[name];
+  $("valve" + name).style.transform =
+    `rotate(${(valves[name] - 1) * 36}deg)`;
+}
+
+function updateSwitch(name) {
+  const on = switches[name];
+
+  $("switch" + name).classList.toggle("on", on);
+
+  $("switchState" + name).textContent = on ? "ON" : "OFF";
+  $("switchState" + name).className =
+    "switch-state " + (on ? "on" : "off");
+}
+
+function configurationCorrect() {
+  return (
+    valves.A === 5 &&
+    valves.B === 1 &&
+    valves.C === 4 &&
+    switches.A === false &&
+    switches.B === true &&
+    switches.C === true
+  );
+}
+
+async function initAudio() {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return false;
+
+  if (!audioContext) {
+    audioContext = new AudioCtx();
+    masterGain = audioContext.createGain();
+    masterGain.gain.value = 0.65;
+    masterGain.connect(audioContext.destination);
   }
 
-  function loadState() {
-    try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-
-      if (saved && saved.positions) {
-        saved.targets = { ...FIXED_TARGETS };
-        saved.moved = saved.moved || { A:false, B:false, C:false };
-        saved.switchPositions = saved.switchPositions || { A:false, B:false, C:false };
-        saved.touchedSwitch = !!saved.touchedSwitch;
-        saved.activated = !!saved.activated;
-        saved.alarm = !!saved.alarm;
-        saveState();
-        return saved;
-      }
-    } catch(e) {}
-
-    const fresh = {
-      targets: { ...FIXED_TARGETS },
-      positions: { A:1, B:1, C:1 },
-      moved: { A:false, B:false, C:false },
-      switchPositions: { A:false, B:false, C:false },
-      touchedSwitch: false,
-      activated: false,
-      alarm: false
-    };
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
-    return fresh;
+  if (audioContext.state === "suspended") {
+    await audioContext.resume();
   }
 
-  let state = loadState();
+  return true;
+}
 
-  function setMessage(text, kind = "") {
-    message.textContent = text;
-    message.className = "message" + (kind ? " " + kind : "");
+function tone(freq, duration, type = "sine", volume = 0.2, delay = 0) {
+  if (!audioContext) return;
+
+  const start = audioContext.currentTime + delay;
+  const osc = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, start);
+
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(
+    Math.max(0.001, volume), start + 0.025
+  );
+  gain.gain.setValueAtTime(
+    Math.max(0.001, volume), start + duration * 0.65
+  );
+  gain.gain.exponentialRampToValueAtTime(
+    0.0001, start + duration
+  );
+
+  osc.connect(gain);
+  gain.connect(masterGain);
+  osc.start(start);
+  osc.stop(start + duration + 0.03);
+}
+
+function playStartupSound() {
+  tone(220, 0.22, "square", 0.12, 0);
+  tone(330, 0.22, "square", 0.12, 0.25);
+  tone(440, 0.35, "triangle", 0.15, 0.5);
+  tone(660, 0.55, "sine", 0.15, 0.9);
+}
+
+function playValveSound() {
+  if (!audioContext) return;
+
+  const size = Math.floor(audioContext.sampleRate * 0.5);
+  const buffer = audioContext.createBuffer(
+    1, size, audioContext.sampleRate
+  );
+  const data = buffer.getChannelData(0);
+
+  for (let i = 0; i < size; i++) {
+    data[i] = (Math.random() * 2 - 1) * (1 - i / size);
   }
 
-  function setLed(index, color) {
-    leds[index].className = "led" + (color ? " " + color : "");
+  const noise = audioContext.createBufferSource();
+  const filter = audioContext.createBiquadFilter();
+  const gain = audioContext.createGain();
+
+  noise.buffer = buffer;
+  filter.type = "lowpass";
+  filter.frequency.value = 900;
+
+  const now = audioContext.currentTime;
+  gain.gain.setValueAtTime(0.22, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
+
+  noise.connect(filter);
+  filter.connect(gain);
+  gain.connect(masterGain);
+
+  noise.start(now);
+  noise.stop(now + 0.5);
+
+  tone(95, 0.45, "sawtooth", 0.12, 0.05);
+  tone(70, 0.4, "square", 0.1, 0.35);
+}
+</script>
+
+function playAlarmCycle() {
+  if (!audioContext || !alarmActive) return;
+
+  const start = audioContext.currentTime;
+  const osc = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+
+  osc.type = "sawtooth";
+  osc.frequency.setValueAtTime(620, start);
+  osc.frequency.linearRampToValueAtTime(960, start + 0.65);
+  osc.frequency.linearRampToValueAtTime(620, start + 1.3);
+
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.linearRampToValueAtTime(0.14, start + 0.08);
+  gain.gain.setValueAtTime(0.14, start + 1.18);
+  gain.gain.linearRampToValueAtTime(0.0001, start + 1.3);
+
+  osc.connect(gain);
+  gain.connect(masterGain);
+
+  osc.start(start);
+  osc.stop(start + 1.32);
+
+  alarmTimer = setTimeout(() => {
+    if (alarmActive) playAlarmCycle();
+  }, 1300);
+}
+
+function startAlarm() {
+  if (alarmActive) return;
+
+  alarmActive = true;
+  updateStatus();
+
+  setMessage(
+    "!!! ALERTA CRÍTICO !!! SILENCIE O ALARME PARA INTERROMPER A SIRENE.",
+    "danger"
+  );
+
+  playAlarmCycle();
+}
+
+function stopAlarm() {
+  alarmActive = false;
+
+  if (alarmTimer !== null) {
+    clearTimeout(alarmTimer);
+    alarmTimer = null;
   }
 
-  function switchesCorrect() {
-    return switches.every(k =>
-      document.getElementById("sw" + k).checked === targetSwitches[k]
-    );
+  updateStatus();
+
+  setMessage(
+    systemStarted
+      ? "SIRENE SILENCIADA. SISTEMA ATIVADO."
+      : "SIRENE SILENCIADA. SISTEMA AGUARDANDO."
+  );
+}
+
+async function activateSystem() {
+  if (systemStarted) return;
+
+  if (!await initAudio()) {
+    setMessage("ÁUDIO INDISPONÍVEL NESTE NAVEGADOR.");
+    return;
   }
 
-  function valvesCorrect() {
-    return switches.every(k =>
-      state.positions[k] === FIXED_TARGETS[k]
-    );
-  }
-
-  function stage1Color() {
-    if (switchesCorrect()) return "green";
-    return state.touchedSwitch ? "yellow" : "";
-  }
-
-  function stage2Color() {
-    if (!switchesCorrect()) return "";
-    if (valvesCorrect()) return "green";
-    return switches.some(k => state.moved[k]) ? "yellow" : "";
-  }
-
-  function update() {
-    switches.forEach(k => {
-      document.getElementById("swCaption" + k).textContent =
-        document.getElementById("sw" + k).checked ? "LIGADO" : "DESLIGADO";
-
-      document.getElementById("pos" + k).textContent = state.positions[k];
-
-      document.getElementById("dial" + k).style.setProperty(
-        "--angle",
-        ((state.positions[k] - 1) * 36) + "deg"
-      );
-
-      document.getElementById("dial" + k).setAttribute(
-        "aria-label",
-        "Válvula " + k + ", posição " + state.positions[k] + " de 10. Clique para girar."
-      );
-    });
-
-    if (state.alarm) {
-      panel.classList.add("alarm");
-      status.textContent = "VAZAMENTO";
-      status.className = "status-value";
-
-      leds.forEach((_, i) => setLed(i, ""));
-      leverButton.disabled = true;
-      leverCopy.innerHTML = "SISTEMA EM FALHA.<br>VAZAMENTO DETECTADO.";
-      return;
-    }
-
-    panel.classList.remove("alarm");
-
-    if (state.activated) {
-      status.textContent = "EM OPERAÇÃO";
-      status.className = "status-value ready";
-
-      leds.forEach((_, i) => setLed(i, "green"));
-      leverButton.disabled = true;
-      leverCopy.innerHTML = "ACIONAMENTO CONCLUÍDO.<br>SISTEMA EM OPERAÇÃO.";
-      return;
-    }
-
-    const stage1 = switchesCorrect();
-    const stage2 = stage1 && valvesCorrect();
-
-    setLed(0, stage1Color());
-    setLed(1, stage2Color());
-    setLed(2, "off");
-
-    leverButton.disabled = !stage2;
-    status.textContent = stage2 ? "PRONTO" : "DESLIGADO";
-    status.className = "status-value" + (stage2 ? " ready" : "");
-
-    leverCopy.innerHTML = stage2
-      ? "TODAS AS LINHAS VALIDADAS.<br>ACIONAMENTO GERAL DISPONÍVEL."
-      : "ACIONAMENTO BLOQUEADO.<br>Valide os circuitos e alinhe as três válvulas para liberar a alavanca.";
-  }
-
-  // Restaurar interruptores salvos.
-  switches.forEach(k => {
-    const sw = document.getElementById("sw" + k);
-    sw.checked = !!state.switchPositions[k];
-
-    sw.addEventListener("change", () => {
-      if (state.activated || state.alarm) return;
-
-      state.touchedSwitch = true;
-      state.switchPositions[k] = sw.checked;
-      saveState();
-      update();
-
-      if (switchesCorrect()) {
-        setMessage(
-          "CIRCUITOS VALIDADOS. Prossiga para o alinhamento das válvulas.",
-          "success"
-        );
-      } else {
-        setMessage("CONFIGURAÇÃO DE CIRCUITOS INCONSISTENTE.", "warn");
-      }
-    });
-  });
-
-  // Criar as marcações das válvulas.
-  switches.forEach(k => {
-    const dial = document.getElementById("dial" + k);
-
-    for (let i = 0; i < 10; i++) {
-      const tick = document.createElement("span");
-      tick.className = "tick" + (i % 5 === 0 ? " major" : "");
-      tick.style.transform = `translateX(-50%) rotate(${i * 36}deg)`;
-      dial.querySelector(".tick-ring").appendChild(tick);
-    }
-
-    dial.addEventListener("click", () => {
-      if (state.activated || state.alarm) return;
-
-      if (!switchesCorrect()) {
-        setMessage(
-          "CIRCUITOS AINDA NÃO VALIDADOS. Configure os interruptores primeiro.",
-          "warn"
-        );
-        return;
-      }
-
-      // Avança de 1 a 10 e retorna para 1.
-      state.positions[k] = state.positions[k] % 10 + 1;
-      state.moved[k] = true;
-
-      saveState();
-      update();
-
-      if (valvesCorrect()) {
-        setMessage(
-          "ALINHAMENTO VALIDADO. O acionamento geral está liberado.",
-          "success"
-        );
-      } else {
-        setMessage(
-          "VÁLVULA " + k + " AJUSTADA. Alinhamento ainda não confirmado.",
-          "warn"
-        );
-      }
-    });
-  });
-
-  // Acionamento da alavanca.
-  leverButton.addEventListener("click", () => {
-    if (leverButton.disabled || state.activated || state.alarm) return;
-
-    state.activated = true;
-    saveState();
-
-    leverHandle.style.transform = "rotate(28deg)";
-    update();
-
+  if (!configurationCorrect()) {
     setMessage(
-      "SISTEMA ATIVADO. Pressão sendo estabelecida nas linhas…",
-      "success"
+      "CONFIGURAÇÃO INCORRETA. VERIFIQUE AS VÁLVULAS E OS INTERRUPTORES."
     );
-
-    // O vazamento acontece após a ativação.
-    window.setTimeout(() => {
-      state.alarm = true;
-      saveState();
-      update();
-
-      setMessage(
-        "⚠ ALERTA: VAZAMENTO DE GÁS DETECTADO. FALHA DE CONTENÇÃO. ABANDONE A ÁREA IMEDIATAMENTE.",
-        "danger"
-      );
-
-      // Alarme sonoro.
-      try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-
-        if (AudioContext) {
-          const ctx = new AudioContext();
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-
-          osc.type = "square";
-          osc.frequency.value = 880;
-          gain.gain.value = 0.045;
-
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start();
-
-          const interval = window.setInterval(() => {
-            osc.frequency.value = osc.frequency.value === 880 ? 660 : 880;
-          }, 350);
-
-          window.setTimeout(() => {
-            clearInterval(interval);
-            osc.stop();
-            ctx.close();
-          }, 4200);
-        }
-      } catch(e) {}
-    }, 4500);
-  });
-
-  // Reiniciar o painel, mantendo a combinação 312.
-  document.getElementById("resetButton").addEventListener("click", () => {
-    if (!confirm("Reiniciar o painel? A combinação fixa será A=3, B=1, C=2.")) {
-      return;
-    }
-
-    localStorage.removeItem(STORAGE_KEY);
-    state = loadState();
-
-    switches.forEach(k => {
-      document.getElementById("sw" + k).checked = false;
-    });
-
-    leverHandle.style.transform = "rotate(-28deg)";
-    update();
-    setMessage("PAINEL REINICIADO. Combinação das válvulas: A=3, B=1, C=2.");
-  });
-
-  if (state.activated) {
-    leverHandle.style.transform = "rotate(28deg)";
+    tone(180, 0.25, "square", 0.12);
+    return;
   }
 
-  update();
-})();
+  systemStarted = true;
+  $("lever").classList.add("active");
+  updateStatus();
+
+  setMessage("CONFIGURAÇÃO ACEITA. INICIALIZANDO...", "success");
+  playStartupSound();
+
+  setTimeout(() => {
+    if (!systemStarted) return;
+
+    playValveSound();
+    setMessage("VÁLVULAS ACIONADAS. SISTEMA EM FUNCIONAMENTO.", "success");
+  }, 1700);
+
+  setTimeout(() => {
+    if (systemStarted) startAlarm();
+  }, 4200);
+}
+
+async function resetPanel() {
+  stopAlarm();
+  systemStarted = false;
+
+  valves.A = 1;
+  valves.B = 1;
+  valves.C = 1;
+
+  switches.A = false;
+  switches.B = true;
+  switches.C = true;
+
+  for (const name of ["A", "B", "C"]) {
+    updateValve(name);
+    updateSwitch(name);
+  }
+
+  $("lever").classList.remove("active");
+  updateStatus();
+  setMessage("PAINEL REINICIADO. AGUARDANDO CONFIGURAÇÃO.");
+}
+
+for (const name of ["A", "B", "C"]) {
+  $("valve" + name).addEventListener("click", async () => {
+    if (systemStarted) return;
+
+    await initAudio();
+
+    valves[name] = valves[name] >= 10 ? 1 : valves[name] + 1;
+    updateValve(name);
+
+    tone(130 + valves[name] * 20, 0.08, "square", 0.06);
+    setMessage("VÁLVULA " + name + " AJUSTADA PARA " + valves[name] + ".");
+  });
+
+  $("switch" + name).addEventListener("click", async () => {
+    if (systemStarted) return;
+
+    await initAudio();
+
+    switches[name] = !switches[name];
+    updateSwitch(name);
+
+    tone(switches[name] ? 440 : 220, 0.09, "square", 0.07);
+    setMessage(
+      "INTERRUPTOR " + name + ": " +
+      (switches[name] ? "ON" : "OFF") + "."
+    );
+  });
+}
+
+$("activateButton").addEventListener("click", activateSystem);
+$("lever").addEventListener("click", activateSystem);
+$("stopAlarmButton").addEventListener("click", stopAlarm);
+$("resetButton").addEventListener("click", resetPanel);
+
+for (const name of ["A", "B", "C"]) {
+  updateValve(name);
+  updateSwitch(name);
+}
+
+updateStatus();
 </script>
 </body>
 </html>
